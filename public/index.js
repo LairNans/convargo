@@ -141,6 +141,25 @@ const actors = [{
   }]
 }];
 
+function getTruckers(id){
+  for(var la=0;la<truckers.length;la++){
+    if(truckers[la].id==id){
+      alert("done");
+      return la;
+    }
+  }
+}
+
+function price(nb){
+  var place=getTruckers(deliveries[nb].truckerId);
+  var price=truckers[place].pricePerKm*deliveries[nb].distance+truckers[place].pricePerVolume*deliveries[nb].volume;
+  deliveries[nb].price=price;
+}
+
+for(var tourne=0;tourne<deliveries.length;tourne++){
+  price(tourne);
+}
+
 console.log(truckers);
 console.log(deliveries);
 console.log(actors);
