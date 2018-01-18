@@ -36,7 +36,8 @@ var deliveries = [{
   'price': 0,
   'commission': {
     'insurance': 0,
-    'convargo': 0
+    'convargo': 0,
+    'treasury': 0
   }
 }, {
   'id': '65203b0a-a864-4dea-81e2-e389515752a8',
@@ -50,7 +51,8 @@ var deliveries = [{
   'price': 0,
   'commission': {
     'insurance': 0,
-    'convargo': 0
+    'convargo': 0,
+    'treasury': 0
   }
 }, {
   'id': '94dab739-bd93-44c0-9be1-52dd07baa9f6',
@@ -64,7 +66,8 @@ var deliveries = [{
   'price': 0,
   'commission': {
     'insurance': 0,
-    'convargo': 0
+    'convargo': 0,
+    'treasury': 0
   }
 }];
 
@@ -144,21 +147,65 @@ const actors = [{
 function getTruckers(id){
   for(var la=0;la<truckers.length;la++){
     if(truckers[la].id==id){
-      alert("done");
       return la;
     }
   }
 }
-
+function updateVolumePrice(volume){
+  if(volume>25){
+    return 0,5;
+  }
+  else if (volume>10) {
+    return 0,7;
+  }
+  else if (volume>5) {
+    return 0.9;
+  }
+  else{
+    return 1;
+  }
+}
 function price(nb){
   var place=getTruckers(deliveries[nb].truckerId);
-  var price=truckers[place].pricePerKm*deliveries[nb].distance+truckers[place].pricePerVolume*deliveries[nb].volume;
-  deliveries[nb].price=price;
+  var price=truckers[place].pricePerKm*deliveries[nb].distance;
+  var coefVolume=updateVolumePrice(deliveries[nb].volume);
+  if(deliveries[nb].options.deductibleReduction)
+  {
+    price+=(truckers[place].pricePerVolume+1)*deliveries[nb].volume*coefVolume;
+    deliveries[nb].commission.convargo+=deliveries[nb].volume*coefVolume;
+  }
+  else{
+    price+=truckers[place].pricePerVolume*deliveries[nb].volume;
+  }
+  deliveries[nb].price+=price;
 }
 
-for(var tourne=0;tourne<deliveries.length;tourne++){
-  price(tourne);
+function commission(nb){
+  var totalcom=deliveries[nb].price*0.3;
+  deliveries[nb].commission.insurance+=totalcom*0.5;
+  deliveries[nb].commission.treasury+=Math.trunc(deliveries[nb].distance/500);
+  var totalcom=deliveries[nb].price*0.3;
+  deliveries[nb].commission.convargo+=totalcom*0.5-Math.trunc(deliveries[nb].distance/500);
 }
+
+function paying(){
+  for(var tourne=0;tourne<deliveries.length;tourne++){
+    price(tourne);
+    commission(tourne)
+    actors[tourne].payment[0].amount+=deliveries[tourne].price;
+    actors[tourne].payment[1].amount+=deliveries[tourne].price-deliveries[tourne].commission.insurance;
+    actors[tourne].payment[1].amount+=-deliveries[tourne].commission.treasury;
+    actors[tourne].payment[1].amount+=-deliveries[tourne].commission.convargo
+    actors[tourne].payment[2].amount+=deliveries[tourne].commission.treasury;
+    actors[tourne].payment[3].amount+=deliveries[tourne].commission.insurance;
+    actors[tourne].payment[4].amount+=deliveries[tourne].commission.convargo;
+  }
+
+}
+paying();
+
+//Done
+
 
 console.log(truckers);
 console.log(deliveries);
